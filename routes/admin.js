@@ -4,7 +4,6 @@ const jwt = require('jsonwebtoken');
 const Job = require('../models/Job');
 const Application = require('../models/Application');
 
-// ===== ADMIN LOGIN =====
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
   if (email === 'admin@luxetrailco.xyz' && password === 'Admin123!') {
@@ -15,7 +14,6 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// ===== VERIFY TOKEN =====
 function verifyToken(req, res, next) {
   try {
     const token = req.headers.authorization?.split(' ')[1];
@@ -23,12 +21,11 @@ function verifyToken(req, res, next) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
     req.admin = decoded;
     next();
-  } catch (error) {
+  } catch {
     res.status(401).json({ message: 'Invalid token' });
   }
 }
 
-// ===== GET ALL JOBS (ADMIN) =====
 router.get('/jobs', verifyToken, async (req, res) => {
   try {
     const jobs = await Job.find().sort({ createdAt: -1 });
@@ -38,7 +35,6 @@ router.get('/jobs', verifyToken, async (req, res) => {
   }
 });
 
-// ===== CREATE JOB =====
 router.post('/jobs', verifyToken, async (req, res) => {
   try {
     const job = new Job(req.body);
@@ -49,7 +45,6 @@ router.post('/jobs', verifyToken, async (req, res) => {
   }
 });
 
-// ===== UPDATE JOB =====
 router.put('/jobs/:id', verifyToken, async (req, res) => {
   try {
     const job = await Job.findByIdAndUpdate(req.params.id, req.body, { new: true });
@@ -60,7 +55,6 @@ router.put('/jobs/:id', verifyToken, async (req, res) => {
   }
 });
 
-// ===== DELETE JOB =====
 router.delete('/jobs/:id', verifyToken, async (req, res) => {
   try {
     const job = await Job.findByIdAndDelete(req.params.id);
@@ -71,7 +65,6 @@ router.delete('/jobs/:id', verifyToken, async (req, res) => {
   }
 });
 
-// ===== GET ALL APPLICATIONS =====
 router.get('/applications', verifyToken, async (req, res) => {
   try {
     const apps = await Application.find().populate('jobId', 'title company').sort({ createdAt: -1 });
@@ -81,7 +74,6 @@ router.get('/applications', verifyToken, async (req, res) => {
   }
 });
 
-// ===== UPDATE APPLICATION STATUS =====
 router.put('/applications/:id', verifyToken, async (req, res) => {
   try {
     const { status } = req.body;
@@ -96,7 +88,6 @@ router.put('/applications/:id', verifyToken, async (req, res) => {
   }
 });
 
-// ===== DASHBOARD STATS =====
 router.get('/stats', verifyToken, async (req, res) => {
   try {
     const totalJobs = await Job.countDocuments();
