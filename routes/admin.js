@@ -17,29 +17,16 @@ router.post('/login', async (req, res) => {
 
 // ===== VERIFY TOKEN =====
 function verifyToken(req, res, next) {
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token) return res.status(401).json({ message: 'Unauthorized' });
   try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ message: 'Unauthorized' });
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
     req.admin = decoded;
     next();
-  } catch {
+  } catch (error) {
     res.status(401).json({ message: 'Invalid token' });
   }
 }
-
-// ===== DASHBOARD STATS =====
-router.get('/stats', verifyToken, async (req, res) => {
-  try {
-    const totalJobs = await Job.countDocuments();
-    const totalApps = await Application.countDocuments();
-    const pending = await Application.countDocuments({ 'status.value': 'new' });
-    const approved = await Application.countDocuments({ 'status.value': 'approved' });
-    res.json({ totalJobs, totalApps, pending, approved });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
 
 // ===== GET ALL JOBS (ADMIN) =====
 router.get('/jobs', verifyToken, async (req, res) => {
@@ -84,7 +71,7 @@ router.delete('/jobs/:id', verifyToken, async (req, res) => {
   }
 });
 
-// ===== GET ALL APPLICATIONS (ADMIN) =====
+// ===== GET ALL APPLICATIONS =====
 router.get('/applications', verifyToken, async (req, res) => {
   try {
     const apps = await Application.find().populate('jobId', 'title company').sort({ createdAt: -1 });
@@ -102,9 +89,21 @@ router.put('/applications/:id', verifyToken, async (req, res) => {
     if (!app) return res.status(404).json({ message: 'Application not found' });
     app.status.value = status;
     app.status.updatedAt = Date.now();
-    app.status.history.push({ status, date: Date.now() });
     await app.save();
     res.json(app);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// ===== DASHBOARD STATS =====
+router.get('/stats', verifyToken, async (req, res) => {
+  try {
+    const totalJobs = await Job.countDocuments();
+    const totalApps = await Application.countDocuments();
+    const pending = await Application.countDocuments({ 'status.value': 'new' });
+    const approved = await Application.countDocuments({ 'status.value': 'approved' });
+    res.json({ totalJobs, totalApps, pending, approved });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
